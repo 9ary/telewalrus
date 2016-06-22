@@ -163,4 +163,7 @@ class Bot:
 
 
     def run(self):
-        self.loop.run_until_complete(self.event_loop())
+        try:
+            self.loop.run_until_complete(self.event_loop())
+        finally:
+            self.session.close()
