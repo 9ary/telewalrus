@@ -36,6 +36,10 @@ class Chat:
             return handler
         return wrap
 
+    def any(self, handler):
+        self.bot.any_handlers[self.id] = handler
+        return handler
+
 cmd_regex = re.compile(r"^(?P<cmd>\w+)(|@(?P<username>\w+))$")
 class MessageEntity:
     def __init__(self, bot, data, text):
@@ -108,8 +112,10 @@ class Update:
     async def handle(self):
         date = int(time.time())
         if date - self.message.date < 300:
-            handler = self.bot.cmd_handlers.get(self.message.cmd,
-                    self.bot.cmd_handlers.get((self.message.chat.id, self.message.cmd)))
+            handler = self.bot.cmd_handlers.get((self.message.chat.id, self.message.cmd),
+                    self.bot.cmd_handlers.get(self.message.cmd,
+                    self.bot.any_handlers.get(self.message.chat.id,
+                    self.bot.any_handlers.get("any"))))
             if handler is not None:
                 await handler(self.message)
 
@@ -121,6 +127,7 @@ class Bot:
         self.polling_timeout = polling_timeout
         self.polling_offset = 0
         self.cmd_handlers = {}
+        self.any_handlers = {}
         self.ownuser = User(self, self.api_call_sync("getMe"))
 
     def command(self, command):
@@ -128,6 +135,10 @@ class Bot:
             self.cmd_handlers[command.lower()] = handler
             return handler
         return wrap
+
+    def any(self, handler):
+        self.any_handlers["any"] = handler
+        return handler
 
     async def api_call(self, method, **params):
         print(">>", method)
