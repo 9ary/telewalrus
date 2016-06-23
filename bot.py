@@ -68,6 +68,7 @@ class Message:
 
         self.entities = []
         self.cmd = None
+        self.args = None
         entities = data.get("entities")
         if entities is not None:
             for e in entities:
@@ -76,6 +77,7 @@ class Message:
                 if e.type == "bot_command" and e.offset == 0:
                     if e.cmd_target is None or e.cmd_target.lower() == bot.ownuser.username.lower():
                         self.cmd = e.cmd.lower()
+                        self.args = self.text[e.end + 1:]
 
         self.audio = data.get("audio")
         self.document = data.get("document")
