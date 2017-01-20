@@ -101,25 +101,38 @@ class Message:
         self.migrate_from_chat_id = data.get("migrate_from_chat_id")
         self.pinned_message = parse_object(bot, data, "pinned_message", Message)
 
+class InlineQuery:
+    def __init__(self, bot, data):
+        self.bot = bot
+        self.id = data.get("id")
+        self.from_user = parse_object(bot, data, "from", User)
+        self.location = data.get("location")
+        self.query = data.get("query")
+        self.offset = data.get("offset")
+
 class Update:
     def __init__(self, bot, data):
         self.bot = bot
         self.id = data.get("update_id")
         self.message = parse_object(bot, data, "message", Message)
         self.edited_message = parse_object(bot, data, "edited_message", Message)
-        self.inline_query = data.get("inline_query")
+        self.inline_query = parse_object(bot, data, "inline_query", InlineQuery)
         self.chosen_inline_result = data.get("chosen_inline_result")
         self.callback_query = data.get("callback_query")
 
     async def handle(self):
         date = int(time.time())
-        if date - self.message.date < 300:
-            handler = self.bot.cmd_handlers.get((self.message.chat.id, self.message.cmd),
-                    self.bot.cmd_handlers.get(self.message.cmd,
-                    self.bot.any_handlers.get(self.message.chat.id,
-                    self.bot.any_handlers.get("any"))))
-            if handler is not None:
-                await handler(self.message)
+        if self.message is not None:
+            if date - self.message.date < 300:
+                handler = self.bot.cmd_handlers.get((self.message.chat.id, self.message.cmd),
+                        self.bot.cmd_handlers.get(self.message.cmd,
+                        self.bot.any_handlers.get(self.message.chat.id,
+                        self.bot.any_handlers.get("any"))))
+                if handler is not None:
+                    await handler(self.message)
+
+        elif self.inline_query is not None:
+            await self.bot.inline_query_handler(self.inline_query)
 
 class Bot:
     def __init__(self, api_token, polling_timeout = 10):
@@ -130,6 +143,7 @@ class Bot:
         self.polling_offset = 0
         self.cmd_handlers = {}
         self.any_handlers = {}
+        self.inline_query_handler = None
         self.ownuser = User(self, self.api_call_sync("getMe"))
 
     def command(self, command):
@@ -140,6 +154,10 @@ class Bot:
 
     def any(self, handler):
         self.any_handlers["any"] = handler
+        return handler
+
+    def inline_query(self, handler):
+        self.inline_query_handler = handler
         return handler
 
     async def api_call(self, method, **params):
