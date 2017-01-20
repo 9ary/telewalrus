@@ -122,7 +122,7 @@ class Update:
                 await handler(self.message)
 
 class Bot:
-    def __init__(self, api_token, polling_timeout = 300):
+    def __init__(self, api_token, polling_timeout = 10):
         self.loop = asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop = self.loop)
         self.api_token = api_token
@@ -164,15 +164,18 @@ class Bot:
 
     async def event_loop(self):
         while True:
-            updates = await self.api_call("getUpdates",
-                    timeout = self.polling_timeout, offset = self.polling_offset)
+            try:
+                updates = await self.api_call("getUpdates",
+                        timeout = self.polling_timeout, offset = self.polling_offset)
 
-            for u in updates:
-                u = Update(self, u)
-                if u.id >= self.polling_offset:
-                    self.polling_offset = u.id + 1
+                for u in updates:
+                    u = Update(self, u)
+                    if u.id >= self.polling_offset:
+                        self.polling_offset = u.id + 1
 
-                asyncio.ensure_future(u.handle())
+                    asyncio.ensure_future(u.handle())
+            except:
+                pass
 
 
     def run(self):
