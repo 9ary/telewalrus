@@ -50,7 +50,9 @@ class MessageEntity:
         self.url = data.get("url")
         self.user = parse_object(bot, data, "user", User)
         if self.type == "bot_command":
-            self.cmd, self.cmd_target = cmd_regex.match(text[self.offset + 1:self.end]).group("cmd", "username")
+            match = cmd_regex.match(text[self.offset + 1:self.end])
+            if match is not None:
+                self.cmd, self.cmd_target = match.group("cmd", "username")
 
 class Message:
     def __init__(self, bot, data):
