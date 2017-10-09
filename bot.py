@@ -185,16 +185,15 @@ class Bot:
             try:
                 updates = await self.api_call("getUpdates",
                         timeout = self.polling_timeout, offset = self.polling_offset)
-
+            except:
+                pass
+            else:
                 for u in updates:
                     u = Update(self, u)
                     if u.id >= self.polling_offset:
                         self.polling_offset = u.id + 1
 
                     asyncio.ensure_future(u.handle())
-            except:
-                pass
-
 
     def run(self):
         try:
