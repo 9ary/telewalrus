@@ -187,7 +187,7 @@ class Bot:
             try:
                 updates = await self.api_call("getUpdates",
                         timeout = self.polling_timeout, offset = self.polling_offset)
-            except:
+            except aiohttp.ClientError:
                 pass
             else:
                 for u in updates:
