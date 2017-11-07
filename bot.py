@@ -183,6 +183,9 @@ class Bot:
         return Chat(self, await self.api_call("getChat", chat_id = identifier))
 
     async def event_loop(self):
+        def update_handler_cb(f):
+            pass
+
         while True:
             try:
                 updates = await self.api_call("getUpdates",
@@ -195,7 +198,8 @@ class Bot:
                     if u.id >= self.polling_offset:
                         self.polling_offset = u.id + 1
 
-                    asyncio.ensure_future(u.handle())
+                    f = asyncio.ensure_future(u.handle())
+                    f.add_done_callback(update_handler_cb)
 
     def run(self):
         try:
