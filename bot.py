@@ -27,8 +27,8 @@ class Chat:
         self.first_name = data.get("first_name")
         self.last_name = data.get("last_name")
 
-    async def message(self, text):
-        await self.bot.api_call("sendMessage", text = text, chat_id = self.id)
+    async def message(self, text, **kwargs):
+        await self.bot.api_call("sendMessage", text = text, chat_id = self.id, **kwargs)
 
     def command(self, command):
         def wrap(handler):
