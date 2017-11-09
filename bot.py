@@ -103,6 +103,9 @@ class Message:
         self.migrate_from_chat_id = data.get("migrate_from_chat_id")
         self.pinned_message = parse_object(bot, data, "pinned_message", Message)
 
+    async def edit(self, text, **kwargs):
+        await self.bot.api_call("editMessageText", message_id = self.id, text = text, chat_id = self.chat.id, **kwargs)
+
 class InlineQuery:
     def __init__(self, bot, data):
         self.bot = bot
