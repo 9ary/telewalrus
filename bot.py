@@ -17,6 +17,25 @@ class User:
         self.last_name = data.get("last_name")
         self.username = data.get("username")
 
+class ChatMember:
+    def __init__(self, bot, data):
+        self.user = parse_object(bot, data, "user", User)
+        self.status = data.get("status")
+        self.until_date = data.get("until_date")
+        self.can_be_edited = data.get("can_be_edited")
+        self.can_change_info = data.get("can_change_info")
+        self.can_post_messages = data.get("can_post_messages")
+        self.can_edit_messages = data.get("can_edit_messages")
+        self.can_delete_messages = data.get("can_delete_messages")
+        self.can_invite_users = data.get("can_invite_users")
+        self.can_restrict_members = data.get("can_restrict_members")
+        self.can_pin_messages = data.get("can_pin_messages")
+        self.can_promote_members = data.get("can_promote_members")
+        self.can_send_messages = data.get("can_send_messages")
+        self.can_send_media_messages = data.get("can_send_media_messages")
+        self.can_send_other_messages = data.get("can_send_other_messages")
+        self.can_add_web_page_previews = data.get("can_add_web_page_previews")
+
 class Chat:
     def __init__(self, bot, data):
         self.bot = bot
@@ -29,6 +48,10 @@ class Chat:
 
     async def message(self, text, **kwargs):
         await self.bot.api_call("sendMessage", text = text, chat_id = self.id, **kwargs)
+
+    async def administrators(self):
+        data = await self.bot.api_call("getChatAdministrators", chat_id = self.id)
+        return [ChatMember(self.bot, member) for member in data]
 
     def command(self, command):
         def wrap(handler):
