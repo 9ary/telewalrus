@@ -106,6 +106,18 @@ class Message:
     async def edit(self, text, **kwargs):
         await self.bot.api_call("editMessageText", message_id = self.id, text = text, chat_id = self.chat.id, **kwargs)
 
+class CallbackQuery:
+    def __init__(self, bot, data):
+        self.bot = bot
+        self.id = data.get("id")
+        self.from_user = parse_object(bot, data, "from", User)
+        self.message = parse_object(bot, data, "message", Message)
+        self.chat_instance = data.get("chat_instance")
+        self.data = data.get("data")
+
+    async def answer(self, **kwargs):
+        await self.bot.api_call("answerCallbackQuery", callback_query_id = self.id, **kwargs)
+
 class InlineQuery:
     def __init__(self, bot, data):
         self.bot = bot
@@ -123,7 +135,7 @@ class Update:
         self.edited_message = parse_object(bot, data, "edited_message", Message)
         self.inline_query = parse_object(bot, data, "inline_query", InlineQuery)
         self.chosen_inline_result = data.get("chosen_inline_result")
-        self.callback_query = data.get("callback_query")
+        self.callback_query = parse_object(bot, data, "callback_query", CallbackQuery)
 
     async def handle(self):
         date = int(time.time())
@@ -139,6 +151,9 @@ class Update:
         elif self.inline_query is not None:
             await self.bot.inline_query_handler(self.inline_query)
 
+        elif self.callback_query is not None:
+            await self.bot.callback_query_handler(self.callback_query)
+
 class Bot:
     def __init__(self, api_token, polling_timeout = 10):
         self.loop = asyncio.get_event_loop()
@@ -149,6 +164,7 @@ class Bot:
         self.cmd_handlers = {}
         self.any_handlers = {}
         self.inline_query_handler = None
+        self.callback_query_handler = None
         self.ownuser = User(self, self.api_call_sync("getMe"))
 
     def command(self, command):
@@ -163,6 +179,10 @@ class Bot:
 
     def inline_query(self, handler):
         self.inline_query_handler = handler
+        return handler
+
+    def callback(self, handler):
+        self.callback_query_handler = handler
         return handler
 
     async def api_call(self, method, **params):
