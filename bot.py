@@ -106,6 +106,9 @@ class Message:
     async def edit(self, text, **kwargs):
         await self.bot.api_call("editMessageText", message_id = self.id, text = text, chat_id = self.chat.id, **kwargs)
 
+    async def delete(self):
+        await self.bot.api_call("deleteMessage", chat_id = self.chat.id, message_id = self.id)
+
 class CallbackQuery:
     def __init__(self, bot, data):
         self.bot = bot
