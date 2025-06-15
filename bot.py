@@ -182,8 +182,6 @@ class Update:
 
 class Bot:
     def __init__(self, api_token, polling_timeout = 10):
-        self.loop = asyncio.get_event_loop()
-        self.session = aiohttp.ClientSession(loop = self.loop)
         self.api_token = api_token
         self.polling_timeout = polling_timeout
         self.polling_offset = 0
@@ -223,10 +221,18 @@ class Bot:
                 return None
 
     def api_call_sync(self, method, **params):
-        return self.loop.run_until_complete(self.api_call(method, **params))
+        async def inner():
+            async with aiohttp.ClientSession() as session:
+                self.session = session
+                return await self.api_call(method, **params)
+        return asyncio.run(inner())
 
     def get_chat(self, identifier):
-        return self.loop.run_until_complete(self.get_chat_aync(identifier))
+        async def inner():
+            async with aiohttp.ClientSession() as session:
+                self.session = session
+                return await self.get_chat_aync(identifier)
+        return asyncio.run(inner())
 
     async def get_chat_aync(self, identifier):
         return Chat(self, await self.api_call("getChat", chat_id = identifier))
@@ -259,8 +265,10 @@ class Bot:
 
                 f = asyncio.create_task(u.handle())
 
+    async def run_async(self):
+        async with aiohttp.ClientSession() as session:
+            self.session = session
+            return await self.event_loop()
+
     def run(self):
-        try:
-            self.loop.run_until_complete(self.event_loop())
-        finally:
-            self.session.close()
+        return asyncio.run(self.run_async())
