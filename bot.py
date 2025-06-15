@@ -212,11 +212,11 @@ class Bot:
         return handler
 
     async def api_call(self, method, **params):
-        print(">>", method)
+        #print(">>", method)
         url = "https://api.telegram.org/bot{}/{}".format(self.api_token, method)
         async with self.session.post(url, data = params) as r:
             d = await r.json()
-            print("<<", method, d)
+            #print("<<", method, d)
             if d["ok"]:
                 return d["result"]
             else:
