@@ -232,23 +232,32 @@ class Bot:
         return Chat(self, await self.api_call("getChat", chat_id = identifier))
 
     async def event_loop(self):
-        def update_handler_cb(f):
-            pass
-
+        max_retry_interval = 600
+        backoff_steps = 10
+        update_failures = 0
         while True:
+            if update_failures > 0:
+                update_failures = min(update_failures, backoff_steps)
+                await asyncio.sleep(
+                    max_retry_interval ** (update_failures / backoff_steps),
+                )
+            update_failures += 1
+
             try:
                 updates = await self.api_call("getUpdates",
                         timeout = self.polling_timeout, offset = self.polling_offset)
-            except aiohttp.ClientError:
-                pass
-            else:
-                for u in updates:
-                    u = Update(self, u)
-                    if u.id >= self.polling_offset:
-                        self.polling_offset = u.id + 1
+                if updates is None:
+                    continue
+            except (aiohttp.ClientError, asyncio.TimeoutError):
+                continue
 
-                    f = asyncio.ensure_future(u.handle())
-                    f.add_done_callback(update_handler_cb)
+            update_failures = 0
+            for u in updates:
+                u = Update(self, u)
+                if u.id >= self.polling_offset:
+                    self.polling_offset = u.id + 1
+
+                f = asyncio.create_task(u.handle())
 
     def run(self):
         try:
